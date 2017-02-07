@@ -5,7 +5,7 @@ PT("page transition") is a tiny library that enable fullscreen page transition e
 <hr>
 1. Modify your HTML file like this:
 
-```vbscript-html
+```html
 <html>
 	<body>
 		<div id="wrapper">
