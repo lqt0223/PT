@@ -5,7 +5,7 @@ PT("page transition") is a tiny library that enable fullscreen page transition e
 <hr>
 1. Modify your HTML file like this:
 
-```
+```vbscript-html
 <html>
 	<body>
 		<div id="wrapper">
@@ -18,7 +18,7 @@ PT("page transition") is a tiny library that enable fullscreen page transition e
 </html>
 ```
 2. Configure PT with the following code. 
-```
+```javascript
 //router.js
 
 PT.init("#wrapper");
@@ -29,7 +29,7 @@ PT.customDirection("#home",1);
 /* PT can "guess" the animation playback direction according to your previous hashes. If you need to specify an animation playback direction for a hash (such as "#home"), use this function above. */
 ```
 In the `PT.enable()`  function, the second parameter is a custom `Style` instance that describes the transition. You can create new style by yourself like this:
-```
+```javasript
 var zoomInFade = new Style({
 	in: {
 		from:{
@@ -57,7 +57,7 @@ var zoomInFade = new Style({
 
 3. Run `PT.run()` after the code where your front-end router changes the innerHTML of the wrapper div.
 
-```
+```javascript
 //router.js
 
 window.onhashchange = function(){
