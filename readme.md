@@ -1,10 +1,10 @@
-PT: Fullscreen page transition effect for front-end routing
+PT: Fullscreen page transition animation for front-end routing
 ================
-PT("page transition") is a tiny library that enable fullscreen page transition effect for frond-end routing(using hash "#" to change web content.)
+PT("page transition") is a tiny library that enable fullscreen page transition animation for frond-end routing(using hash "#" to change web content.)
 ### How to use:
 <hr>
-1. Modify your HTML file like this:
 
+First, modify your HTML file like this:
 ```html
 <html>
 	<body>
@@ -17,19 +17,42 @@ PT("page transition") is a tiny library that enable fullscreen page transition e
 	</body>
 </html>
 ```
-2. Configure PT with the following code. 
+
+Then, configure PT with the following code. 
 ```javascript
 //router.js
 
 PT.init("#wrapper");
 /* The parameter is the CSS selector string to your content wrapper div. */
+
 PT.enable(["#login","#welcome","#dashboard"], zoomInFade);
-/* This function enables transition effect on specified hashes. */
-PT.customDirection("#home",1);  
-/* PT can "guess" the animation playback direction according to your previous hashes. If you need to specify an animation playback direction for a hash (such as "#home"), use this function above. */
+/* This function enables transition animation on specified hashes.
+Or you can write */
+PT.enable("*", zoomInFade);
+/* Transition animation on all hashes */
+
+PT.customDirection("#dashboard",1);  
+/* (optional)
+Basically, PT can "guess" the animation playback direction according to your previous hashes.
+If you need to specify an animation playback direction for a hash 
+(such as "#home"), use this function above. */
+
+PT.setHome("#welcome");
+/* (optional)
+This function sets the hash as home.
+A home hash will behave in the following pattern:
+- Access to this hash will always trigger a backward animation.
+- The next hash change will always trigger a forward animation.
+*/
 ```
-In the `PT.enable()`  function, the second parameter is a custom `Style` instance that describes the transition. You can create new style by yourself like this:
-```javasript
+
+In the `PT.enable()`  function, the second parameter is a custom `Style` instance that describes the transition.
+In the `Style` instance, `in` is for describing the animation for the page that will appear, and `out` for disappear.
+Other key names in the `style` instance are based on the CSS Animation API.
+You can refer to it at: [animation - CSS | MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/animation)
+
+An example of custom `Style` instance:
+```javascript
 var zoomInFade = new Style({
 	in: {
 		from:{
@@ -44,7 +67,7 @@ var zoomInFade = new Style({
 	out: {
 		from:{
 			opacity: 1.0,
-			transform: "scale(1.0)"
+			transform: "scale(1.0)"W
 		},
 		to:{
 			opacity: 0.0,
@@ -55,7 +78,7 @@ var zoomInFade = new Style({
 });
 ```
 
-3. Run `PT.run()` after the code where your front-end router changes the innerHTML of the wrapper div.
+Finally, put `PT.run()` after the code where your front-end router changes the content of the wrapper div.
 
 ```javascript
 //router.js
@@ -68,6 +91,5 @@ window.onhashchange = function(){
 
 ### TODO
 <hr>
-1. Some preset effect.
+1. Some preset animations.
 2. What if the wrapper div will glitch when the css position property is set to "absolute"? 
-3. PT.setHome() to set the root for routing. The next route will always trigger a forth animation.

@@ -10,34 +10,93 @@ PT.init = function(querySelector){
 	PT._customDirections = [];
 };
 
-PT._getCurrentDOMCopy = function(){
-	return document.querySelector(PT._selector).cloneNode(true);
+PT.enable = function(hashes, style){
+	if(hashes == "*"){
+		PT._enableOnAllHashes = true;
+	}else{
+		PT._enabledHashes = hashes;
+	}
+	PT._style = style;
 };
 
-PT._recordDOM = function(){
-	// when there is no previous DOM, use a blank div.
-	PT._prevDOM = PT._curDOM ? PT._curDOM : document.createElement("div") ;
-	PT._curDOM = PT._getCurrentDOMCopy();
+PT.customDirection = function(hash, direction){
+	if(!PT._checkInHashList(hash)){
+		throw "The hash " + hash +" is not enabled yet.";
+	}
+	PT._customDirections.push({
+		hash: hash,
+		direction: direction
+	});
 };
 
-PT._recordHash = function(hash){
-	PT._hashArray.push(hash);
+PT.setHome = function(hash){
+	if(!PT._checkInHashList(hash)){
+		throw 'The hash "' + hash + '" is not enabled yet.';
+	}
+
+	if(PT._getCustomDirection(hash) === 0){
+		throw 'The hash "' + hash + '" is set in custom direction as "forth". Home hash should always have a "back" animation direction.';
+	}
+	PT._homeHash = hash;
 };
 
 PT.run = function(){
 	var currentHash = window.location.hash;
 	PT._recordDOM();
 	PT._recordHash(currentHash);
-	if(PT._enabledHashes.some(function(hash){
-		return hash == currentHash;
-	})){
-		PT._direction = PT._getCustomDirection(currentHash) || PT._autoDirection();
+
+	var shouldRun = PT._shouldRun(currentHash);
+	if(shouldRun){
+		if(PT._homeHash == currentHash){
+			PT._hashArray = [currentHash];
+			PT._direction = DIRECTION_BACK;
+		}else{
+			var customDirection = PT._getCustomDirection(currentHash);
+			if(customDirection !== undefined){
+				PT._direction = customDirection;
+			}else{
+				PT._direction = PT._autoDirection();
+			}
+		}
 		PT._makeTransition(
 			PT._prevDOM,
-			PT._curDOM,
 			PT._style,
 			PT._direction
-		);		
+		);	
+	}
+};
+
+PT._recordDOM = function(){
+	// when there is no previous DOM, use a blank div.
+	PT._prevDOM = PT._curDOM ? PT._curDOM : document.createElement("div") ;
+	PT._curDOM = document.querySelector(PT._selector).cloneNode(true);
+};
+
+PT._recordHash = function(hash){
+	PT._hashArray.push(hash);
+};
+
+PT._shouldRun = function(hash){
+	if(PT._enableOnAllHashes){
+		return true;
+	}else{
+		if(PT._enabledHashes.some(function(aHash){
+			return aHash == hash;
+		})){
+			return true;
+		}else{
+			return false;
+		}
+	}
+};
+
+PT._checkInHashList = function(hash){
+	if(PT._enableOnAllHashes){
+		return true;
+	}else{
+		return PT._enabledHashes.some(function(aHash){
+			return aHash == hash;
+		});
 	}
 };
 
@@ -61,19 +120,7 @@ PT._getCustomDirection = function(hash){
 	}
 };
 
-PT.enable = function(hashes, style){
-	PT._enabledHashes = hashes;
-	PT._style = style;
-};
-
-PT.customDirection = function(hash, direction){
-	PT._customDirections.push({
-		hash: hash,
-		direction: direction
-	});
-};
-
-PT._makeTransition = function(prevDOM, cur, style, direction){
+PT._makeTransition = function(prevDOM, style, direction){
 	var curDOM = document.querySelector(PT._selector);
 	// draw the div using prevDOMContent and cover the updated content	
 	PT._parentNode.appendChild(prevDOM);
@@ -95,14 +142,30 @@ PT._makeTransition = function(prevDOM, cur, style, direction){
 	},false);
 
 	var style = PT._style;
+	PT._applyCssAnimationStyles(style, [prevDOM, curDOM]);
 	if(direction == DIRECTION_FORTH){
-		prevDOM.style.animation = style.outForth + " " + style.duration; 
-		curDOM.style.animation = style.inForth + " " + style.duration;
+		prevDOM.style.animationName = style.outForth;
+		curDOM.style.animationName = style.inForth;	
 	}else{
-		prevDOM.style.animation = style.inBack + " " + style.duration;
-		curDOM.style.animation = style.outBack + " " + style.duration;
+		prevDOM.style.animationName = style.inBack;
+		curDOM.style.animationName = style.outBack;
 	}
 };
+
+PT._applyCssAnimationStyles = function(style, doms){
+	var attributes = ["delay","direction","duration","fillMode","iterationCount","playState","timingFunction"];
+	for (var i = 0; i < doms.length; i++) {
+		var dom = doms[i];
+		for (var j = 0; j < attributes.length; j++) {
+			var attribute = attributes[j];
+			var value = style[attribute];
+			if(value){
+				var keyName = "animation" + attribute[0].toUpperCase() + attribute.slice(1);
+				dom.style[keyName] = value;	
+			}
+		}
+	}
+}
 
 function Style(data){
 	// generate 2 pairs of random key for the naming of animation
@@ -113,11 +176,17 @@ function Style(data){
 	this._data = data;
 	this._init();
 	return {
-		inForth: this._inForth,
-		inBack: this._inBack,
-		outForth: this._outForth,
-		outBack: this._outBack,
-		duration: this._data.duration
+		inForth: 		this._inForth,
+		inBack: 		this._inBack,
+		outForth: 		this._outForth,
+		outBack: 		this._outBack,
+		duration: 		this._data.duration,
+		timingFunction: this._data.timingFunction,
+		delay: 			this._data.delay,
+		iterationCount: this._data.iterationCount,
+		direction: 		this._data.direction,
+		fillMode: 		this._data.fillMode,
+		playState: 		this._data.playState,
 	};
 };
 
@@ -160,3 +229,4 @@ Style.prototype._concatCssString = function(cssObject){
 	}
 	return string;
 };
+
