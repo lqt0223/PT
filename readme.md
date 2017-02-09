@@ -93,3 +93,5 @@ window.onhashchange = function(){
 <hr>
 1. Some preset animations.
 2. What if the wrapper div will glitch when the css position property is set to "absolute"? 
+3. The autoCompletion of animation, if user only configured either "in" or "out" animation.
+	The mapReplace function should be more robust.
