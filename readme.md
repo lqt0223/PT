@@ -1,6 +1,6 @@
 PT: Fullscreen page transition animation for front-end routing
 ================
-PT("page transition") is a tiny library that enable fullscreen page transition animation for frond-end routing(using hash "#" to change web content.)
+PT("page transition") is a tiny library that enables fullscreen page transition animation for frond-end routing(using hash "#" to change web content.)
 ### How to use:
 <hr>
 
@@ -67,7 +67,7 @@ var zoomInFade = new Style({
 	out: {
 		from:{
 			opacity: 1.0,
-			transform: "scale(1.0)"W
+			transform: "scale(1.0)"
 		},
 		to:{
 			opacity: 0.0,
