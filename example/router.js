@@ -5,7 +5,7 @@ var slideInRight = new Style({
 	in: {
         from: {
             opacity: 0.0,
-            transform: "scale(0.8)"
+            transform: "scale(0.7)"
         },
         to: {
             opacity: 1.0,

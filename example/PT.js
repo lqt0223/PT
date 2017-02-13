@@ -191,9 +191,7 @@ Style.prototype._init = function() {
 };
 
 Style.prototype._hasEitherAnimation = function() {
-	var inBoolean = this._data.in !== undefined;
-	var outBoolean = this._data.out !== undefined;
-	return inBoolean != outBoolean;
+	return (this._data.in !== undefined) != (this._data.out !== undefined);
 };
 
 Style.prototype._autoComplete = function() {
@@ -215,30 +213,43 @@ Style.prototype._autoComplete = function() {
 		var valueFrom = givenData.from[attribute];
 		var valueTo = givenData.to[attribute];
 		var impliedValue = this._implyValue(valueFrom, valueTo);
-
 		this._data[keyToAutoComplete].from[attribute] = valueTo;
-		this._data[keyToAutoComplete].to[attribute] = impliedValue[0];
-	}
-	//TODO handle some special cases for the value in outTo
-	// do some trick to opacity
-	var to = this._data[keyToAutoComplete].to;
-	if(to.opacity){
-		to.opacity = givenData.from.opacity;
+		this._data[keyToAutoComplete].to[attribute] = attribute == "opacity" ? valueFrom : impliedValue[0];
 	}
 
 	// console.log(this._data);
+	//TODO handle some special cases for the value in outTo
+	// do some trick to opacity
+	// var to = this._data[keyToAutoComplete].to;
+	// if(to.opacity){
+	// 	to.opacity = givenData.from.opacity;
+	// }
+
+	console.log(this._data);
 };
 
 Style.prototype._implyValue = function(a, b) {
+	//extract digit from two value; use the pair of digit to calculate and replace back to a, return a
+
 	var instance = this;
+	var digitPattern = /[\d\.]+/g;
+	for (var i = 0; i < arguments.length; i++) {
+		if(typeof arguments[i] == "number"){
+			arguments[i] = arguments[i].toString();
+		}
+	}
+
+	return instance._mapReplace(digitPattern, a ,function(e){
+		return instance._getCounterValue(e,x);
+	});
 
 	var result = [a, b].map(function(e) {
 		if (typeof e == "number") {
 			e = e.toString();
 		}
-		var digitPattern = /(\d|\.)+/g;
+		var digitPattern = /[\d\.]+/g;
 		return instance._mapReplace(digitPattern, e, function(e) {
-			return instance._getCounterValue(e);
+			return e + 1;
 		});
 	});
 
@@ -253,22 +264,31 @@ Style.prototype._implyValue = function(a, b) {
 };
 
 Style.prototype._mapReplace = function(regex, string, handler) {
-	var matched = string.match(regex);
-	matched.map(function(e) {
-		e = parseFloat(e) || parseInt(e);
-		string = string.replace(e, handler(e));
-	});
-	return string;
+	var parts = [];
+	var baseIndex = 0;
+	while(result = regex.exec(string)){
+		var index = result.index
+		var length = result[0].length;
+		var number = parseFloat(result[0]) || parseInt(result[0]);
+		var sliced = string.slice(baseIndex, index + length);
+		var after = sliced.replace(result[0],handler(number).toString());
+		parts.push(after);
+		baseIndex = index + length;
+	}
+	parts.push(string.slice(baseIndex));
+	return parts.join("");
 };
 
-Style.prototype._getCounterValue = function(value) {
+Style.prototype._getCounterValue = function(a,b) {
+	console.log(a);
+	console.log(b);
 	var result;
-	if (value > 0 && value <= 1) {
-		result = 1 / value;
-	} else if (value == 0) {
+	if (a > 0 && a <= 1 && b > 1 && b <= 1 ) {
+		result = b / a; // todo
+	} else if (a == 0) {
 		result = 0;
 	} else {
-		result = 0 - value;
+		result = b- a;
 	}
 	return result;
 };
