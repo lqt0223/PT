@@ -53,6 +53,7 @@ You can refer to it at: [animation - CSS | MDN](https://developer.mozilla.org/en
 
 An example of custom `Style` instance:
 ```javascript
+// Full configuration...
 var zoomInFade = new Style({
 	in: {
 		from:{
@@ -76,6 +77,26 @@ var zoomInFade = new Style({
 	},
 	duration: "0.5s"
 });
+
+// You can configure only either "in" or "out" animation,
+// PT will do the auto-completion for you. (Still working...)
+
+var scaleZoomFade = new Style({
+    in: {
+        from: {
+            opacity: 0.0,
+            transform: "scale(0.8)",
+            filter: "blur(10px)"
+        },
+        to: {
+            opacity: 1.0,
+            transform: "scale(1.0)",
+            filter: "blur(0px)"
+        }
+    },
+    duration: "0.5s",
+});
+
 ```
 
 Finally, put `PT.run()` after the code where your front-end router changes the content of the wrapper div.
@@ -93,5 +114,4 @@ window.onhashchange = function(){
 <hr>
 1. Some preset animations.
 2. What if the wrapper div will glitch when the css position property is set to "absolute"? 
-3. The autoCompletion of animation, if user only configured either "in" or "out" animation.
-	The mapReplace function should be more robust.
+3. Optimization for animation auto-completion.

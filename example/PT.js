@@ -209,88 +209,214 @@ Style.prototype._autoComplete = function() {
 		to: {}
 	};
 
-	for (var attribute in givenData.from) {
-		var valueFrom = givenData.from[attribute];
-		var valueTo = givenData.to[attribute];
-		var impliedValue = this._implyValue(valueFrom, valueTo);
-		this._data[keyToAutoComplete].from[attribute] = valueTo;
-		this._data[keyToAutoComplete].to[attribute] = attribute == "opacity" ? valueFrom : impliedValue[0];
+	for(var attribute in givenData.from){
+		var from = givenData.from[attribute];
+		var to = givenData.to[attribute];
+		var result = this._getCounterpart(attribute,keyToAutoComplete,[from,to]);
+		console.log(result);
+		console.log(attribute);
+		this._data[keyToAutoComplete].from[attribute] = result[0];
+		this._data[keyToAutoComplete].to[attribute] = result[1];
 	}
-
-	// console.log(this._data);
-	//TODO handle some special cases for the value in outTo
-	// do some trick to opacity
-	// var to = this._data[keyToAutoComplete].to;
-	// if(to.opacity){
-	// 	to.opacity = givenData.from.opacity;
-	// }
-
-	console.log(this._data);
 };
 
-Style.prototype._implyValue = function(a, b) {
-	//extract digit from two value; use the pair of digit to calculate and replace back to a, return a
+Style.prototype._getCounterpart = function(attr,direction,pair){
+	var css = {
+		attribute: attr,
+		value: pair[0]
+	};
 
-	var instance = this;
-	var digitPattern = /[\d\.]+/g;
-	for (var i = 0; i < arguments.length; i++) {
-		if(typeof arguments[i] == "number"){
-			arguments[i] = arguments[i].toString();
-		}
+	// Exclusive way to deal with opacity
+	if(attr == "opacity"){
+		return [pair[1],pair[0]];
 	}
 
-	return instance._mapReplace(digitPattern, a ,function(e){
-		return instance._getCounterValue(e,x);
-	});
-
-	var result = [a, b].map(function(e) {
-		if (typeof e == "number") {
-			e = e.toString();
-		}
-		var digitPattern = /[\d\.]+/g;
-		return instance._mapReplace(digitPattern, e, function(e) {
-			return e + 1;
-		});
-	});
-
-	if (result.every(function(e) {
-			return parseFloat(e) || parseInt(e);
-		})) {
-		result = result.map(function(e) {
-			return parseFloat(e) || parseInt(e);
-		});
-	}
-	return result;
-};
-
-Style.prototype._mapReplace = function(regex, string, handler) {
+	var parsed = this._getCssValueHandler(css,direction);
 	var parts = [];
+	var numberData = [];
+	var regex = /(\-|\d|\.)+(?!d\()/g;
+	var i = 0;
+	var dif = 0;
+	var inB = false;
 	var baseIndex = 0;
-	while(result = regex.exec(string)){
-		var index = result.index
-		var length = result[0].length;
-		var number = parseFloat(result[0]) || parseInt(result[0]);
-		var sliced = string.slice(baseIndex, index + length);
-		var after = sliced.replace(result[0],handler(number).toString());
-		parts.push(after);
-		baseIndex = index + length;
-	}
-	parts.push(string.slice(baseIndex));
-	return parts.join("");
+	pair.map(function(e){
+		while(result = regex.exec(e)){
+			var number = result[0];
+			var index = result.index;
+			var length = number.length;
+			number = parseFloat(number);
+			numberData.push({
+				number: number,
+				index: index,
+				length: length
+			});
+			if(e == pair[1]){
+				if(!inB){
+					dif = i
+					inB = true;
+				}
+				var x = numberData[i - dif].number;
+				var y = numberData[i].number;
+				var newValue = parsed.handler(x,y);
+				var sliced = e.slice(baseIndex, index + length);
+				var after = sliced.replace(result[0],newValue);
+				parts.push(after);
+				baseIndex = index + length;
+			}
+			i++;
+		};
+	});
+	parts.push(pair[1].slice(baseIndex));
+	return direction == "out" ? [pair[1], parts.join("")] : [parts.join(""), pair[0]];	
 };
 
-Style.prototype._getCounterValue = function(a,b) {
-	console.log(a);
-	console.log(b);
-	var result;
-	if (a > 0 && a <= 1 && b > 1 && b <= 1 ) {
-		result = b / a; // todo
-	} else if (a == 0) {
-		result = 0;
-	} else {
-		result = b- a;
+Style.prototype._getCssValueHandler = function(css,direction){
+	var attribute = css.attribute;
+	var value = css.value;
+	var f = {};
+	
+	var attributePattern = /(\w|\d)+\(/g;
+	var subAttribute = ""
+	var unit = "";
+	if(typeof value == "number"){
+		value = value.toString();
+	}else{
+		subAttribute = value.match(attributePattern)[0].slice(0,-1);
+		unit = value.match(/\(.+\)/g)[0].replace(/(\d|\.)+/g,"").slice(1,-1);
+		value = value.replace(attributePattern,"").slice(0,-1);
 	}
-	return result;
+	switch(attribute){
+		case "transform":{
+			switch(subAttribute){
+				case "scale":
+				case "scaleX":
+				case "scaleY":
+				case "scaleZ":
+				case "scale3d": {
+					f = function(x,y){
+						if(direction == "out"){
+							return y / x;
+						}else{
+							return x / y;
+						}
+					};
+					break;
+				}
+				case "translate":
+				case "translateX":
+				case "translateY":
+				case "translateZ":
+				case "translate3d": {
+					f = function(x,y){
+						var result;
+						if(direction == "in"){
+							result = 2 * x - y;
+						}else{
+							result = 2 * y - x;
+						}
+						if(unit == "%" && result > 100){
+							result = 100
+						}
+						return result;
+					};
+					break;
+				}
+				case "rotate":
+				case "rotateX":
+				case "rotateY":
+				case "rotateZ":
+				case "rotate3d" : {
+					f = function(x,y){
+						var result;
+						if(direction == "in"){
+							result = 2 * x - y;
+						}else{
+							result = 2 * y - x;
+						}
+						if(unit == "%" && result > 100){
+							result = 100
+						}
+						return result;
+					};
+					break;
+				}
+				case "skew":
+				case "skewX":
+				case "skewY" : {
+					f = function(x,y){
+						var result;
+						if(direction == "in"){
+							//the autocompleted animation for skew is a little weird...
+							result = 2 * x - y;
+						}else{
+							result = 2 * y - x;
+						}
+						if(unit == "%" && result > 100){
+							result = 100
+						}
+						return result;
+					};
+					break;
+				}
+				//todo: matrix,matrix3d,
+			}
+			break;
+		}
+		case "filter":{
+			f = function(x,y){
+				if(direction == "out"){
+					return x;
+				}else{
+					return y;
+				}
+			};
+			break;
+			//todo: be more precise;
+			// switch(subAttribute){
+			// 	case "blur":{
+			// 		handler = function(x,y){
+			// 			return x;
+			// 		}
+			// 		break;
+			// 	}
+			// 	case "brightness":{
+			// 		handler = function(x,y){
+			// 			return x;
+			// 		}
+			// 		break;
+			// 	}
+			// 	case "contrast":{
+			// 		break;
+			// 	}
+			// 	case "drop-shadow":{
+			// 		break;
+			// 	}
+			// 	case "grayscale":{
+			// 		break;
+			// 	}
+			// 	case "hue-rotate":{
+			// 		break;
+			// 	}
+			// 	case "invert":{
+			// 		break;
+			// 	}
+			// 	case "opacity":{
+			// 		break;
+			// 	}
+			// 	case "saturate":{
+			// 		break;
+			// 	}
+			// 	case "sepia":{
+			// 		break;
+			// 	}
+			// }
+			// break;
+		}
+	}
+	return {
+		value: value,
+		handler: f
+	}
 };
 
 Style.prototype._getKeyframesString = function() {
@@ -325,21 +451,3 @@ Style.prototype._concatCssString = function(cssObject) {
 	}
 	return string;
 };
-
-// implyAnimation("opacity",0.5,1);
-// return ("opacity",1,0.5);
-// implyAnimation("transform","scale(0.5)","scale(1.0)");
-// return ("transform","scale(1.0)","scale(2.0)");
-// implyAnimation("color","rgb(100,200,300)","rgb(300,200,100)");
-// return ("color","rgb(300,200,100)","rgb(100,200,300)");
-// implyAnimation("opacity",0.5,1);
-// return ("opacity",1,0.5);
-// implyAnimation("opacity",0.5,1);
-// return ("opacity",1,0.5);
-
-/* transform 
-	translateX, Y, Z : xxxpx 0px -xxxpx
-	scale 0.0 1.0 n.0
-	rotateX, Y, Z -xdeg 0deg xdeg
-opacity
-*/
