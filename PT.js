@@ -371,46 +371,6 @@ Style.prototype._getCssValueHandler = function(css,direction){
 				}
 			};
 			break;
-			//todo: be more precise;
-			// switch(subAttribute){
-			// 	case "blur":{
-			// 		handler = function(x,y){
-			// 			return x;
-			// 		}
-			// 		break;
-			// 	}
-			// 	case "brightness":{
-			// 		handler = function(x,y){
-			// 			return x;
-			// 		}
-			// 		break;
-			// 	}
-			// 	case "contrast":{
-			// 		break;
-			// 	}
-			// 	case "drop-shadow":{
-			// 		break;
-			// 	}
-			// 	case "grayscale":{
-			// 		break;
-			// 	}
-			// 	case "hue-rotate":{
-			// 		break;
-			// 	}
-			// 	case "invert":{
-			// 		break;
-			// 	}
-			// 	case "opacity":{
-			// 		break;
-			// 	}
-			// 	case "saturate":{
-			// 		break;
-			// 	}
-			// 	case "sepia":{
-			// 		break;
-			// 	}
-			// }
-			// break;
 		}
 	}
 	return {
